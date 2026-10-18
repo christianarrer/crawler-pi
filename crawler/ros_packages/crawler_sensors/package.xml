@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package format="3">
+  <name>crawler_sensors</name>
+  <version>0.0.0</version>
+  <description>ROS 2 I2C sensor drivers for the Crawler Pi: INA226 power monitoring, dual TMAG5273 track odometry sensors, and ICM-20948 raw IMU.</description>
+  <maintainer email="christianarrer@gmail.com">Christian Arrer</maintainer>
+  <author email="christianarrer@gmail.com">Christian Arrer and ChatGPT (OpenAI)</author>
+  <license>GPL-3.0-only</license>
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
