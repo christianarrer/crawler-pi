@@ -108,6 +108,20 @@ def generate_launch_description():
             ]
         ),
 
+        # Measured IMU position relative to base_footprint: (0, -0.062, +0.053) m.
+        # base_link is already +0.036 m above base_footprint, so z = +0.017 m here.
+        # IMPORTANT: zero rotation is provisional pending IMU board axis verification.
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='base_link_to_imu_link_tf',
+            arguments=[
+                '--x', '0.0', '--y', '-0.062', '--z', '0.017',
+                '--roll', '0.0', '--pitch', '0.0', '--yaw', '0.0',
+                '--frame-id', 'base_link', '--child-frame-id', 'imu_link',
+            ],
+        ),
+
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
