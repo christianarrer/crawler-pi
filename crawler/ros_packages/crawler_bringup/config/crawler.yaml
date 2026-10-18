@@ -1,0 +1,71 @@
+# ROS 2 node parameters. Verify physical I2C addresses and calibrations before deployment.
+crawler_ina226_node:
+  ros__parameters:
+    address: 64
+    shunt_ohms: 0.002
+    publish_rate_hz: 5.0
+    max_current_a: 10.0
+crawler_icm20948_node:
+  ros__parameters:
+    bus_number: 1
+    address: 105
+    frame_id: imu_link
+    publish_rate_hz: 50.0
+    accel_range_g: 4
+    gyro_range_dps: 500
+crawler_tmag_odom_pair_node:
+  ros__parameters:
+    i2c_bus: 1
+    left_address: 34
+    right_address: 35
+    publish_rate_hz: 120.0
+    magnets_per_rev: 4
+    range_z_mt: 80.0
+    conversion_average: 2
+    left_high_threshold: 2500.0
+    left_low_threshold: 1000.0
+    right_high_threshold: 2500.0
+    right_low_threshold: 1000.0
+    peak_history_size: 8
+crawler_hlds_laser_publisher:
+  ros__parameters:
+    port: /dev/ttyUSB0
+    frame_id: base_scan
+crawler_cliff_costmap_node:
+  ros__parameters:
+    map_frame: map
+    base_frame: base_link
+    cliff_radius: 0.32
+crawler_cliff_keepout_node:
+  ros__parameters:
+    map_frame: map
+    cliff_radius: 0.16
+    connect_points: false
+    connection_distance: 0.23
+    connection_radius: 0.35
+crawler_odom_node:
+  ros__parameters:
+    track_width_m: 0.245
+    chain_pitch_mm: 11.0
+    sprocket_teeth: 12
+    calibration_factor: 1.17
+    pose_source: revolutions
+    publish_rate_hz: 50.0
+    imu_weight: 1.0
+    base_frame_id: base_footprint
+crawler_velocity_target:
+  ros__parameters:
+    hard_v_max_m_s: 0.18
+    deadzone_v_m_s: 0.005
+    track_width_m: 0.245
+    sprocket_teeth: 12
+    chain_pitch_m: 0.011
+    odom_calibration_factor: 1.17
+    left_fwd_a: 0.0136232
+    left_fwd_b: 0.08028112
+    left_rev_a: 0.0134875
+    left_rev_b: 0.08261412
+    right_fwd_a: 0.01374704
+    right_fwd_b: 0.0757392
+    right_rev_a: 0.01377946
+    right_rev_b: 0.07894751

@@ -9,14 +9,16 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml', 'README.md', 'LICENSE']),
+        ('share/' + package_name, ['package.xml']),
     ],
     install_requires=['setuptools'],
+    author='ChatGPT and Christian Arrer',
+    author_email='christianarrer@gmail.com',
     zip_safe=True,
     maintainer='Christian Arrer',
-    maintainer_email='EMAIL_ADDRESS_TO_BE_ADDED@example.invalid',
-    description='ROS 2 I2C sensor drivers for Crawler Pi',
-    license='GPL-3.0-only',
+    maintainer_email='christianarrer@gmail.com',
+    description='I2C IMU, battery monitoring and magnetic odometry sensors',
+    license='GPL-3.0-or-later',
     extras_require={
         'test': [
             'pytest',
