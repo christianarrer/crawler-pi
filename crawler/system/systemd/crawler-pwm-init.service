@@ -1,0 +1,11 @@
+[Unit]
+Description=Initialize crawler PWM channels
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/crawler-pwm-init.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

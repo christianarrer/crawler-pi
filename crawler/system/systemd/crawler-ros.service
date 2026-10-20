@@ -1,0 +1,22 @@
+[Unit]
+Description=Crawler ROS2 Launch
+After=network-online.target pigpiod.service crawler-odom-init.service
+Wants=network-online.target crawler-odom-init.service
+Requires=pigpiod.service crawler-odom-init.service
+
+[Service]
+Type=simple
+User=ros
+Group=ros
+WorkingDirectory=/home/ros/crawler-pi/crawler
+Environment="RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+Environment=ROS_DOMAIN_ID=21
+Environment=ROS_LOCALHOST_ONLY=0
+ExecStart=/usr/local/bin/crawler-ros.sh
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
