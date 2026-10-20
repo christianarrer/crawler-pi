@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 
+import math
 import subprocess
 import time
 from collections import deque
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32
+from std_msgs.msg import Bool, Float32
 
 
-MOTOR_EN_GPIO = 5
+CURRENT_DATA_TIMEOUT_S = 0.5
+STATUS_PUBLISH_PERIOD_S = 0.05
 
 WARN_CURRENT_A = 6.0
 TRIP_CURRENT_A = 9.0
@@ -32,15 +34,15 @@ class CurrentGuardNode(Node):
         self.over_start = None
         self.fault_latched = False
         self.last_warn_time = 0.0
+        self.last_current_time = None
+        self.status_publisher = self.create_publisher(Bool, "/crawler/safety/current_ok", 10)
+        self.status_timer = self.create_timer(STATUS_PUBLISH_PERIOD_S, self.publish_safety_status)
 
         self.get_logger().info("Starting crawler current guard")
-        self.get_logger().info(f"MOTOR_EN GPIO: {MOTOR_EN_GPIO}")
         self.get_logger().info(
             f"Warning at {WARN_CURRENT_A:.1f} A, trip at {TRIP_CURRENT_A:.1f} A "
             f"for {TRIP_TIME_S:.2f} s"
         )
-
-        self.set_motor_enable(True)
 
         self.subscription = self.create_subscription(
             Float32,
@@ -49,26 +51,21 @@ class CurrentGuardNode(Node):
             10,
         )
 
-    def set_motor_enable(self, enabled: bool):
-        value = "1" if enabled else "0"
-
-        result = subprocess.run(
-            ["gpioset", "gpiochip0", f"{MOTOR_EN_GPIO}={value}"],
-            text=True,
-            capture_output=True,
+    def publish_safety_status(self):
+        """Fail closed until fresh current samples arrive; latch on overcurrent."""
+        fresh = (
+            self.last_current_time is not None
+            and time.monotonic() - self.last_current_time <= CURRENT_DATA_TIMEOUT_S
         )
-
-        if result.returncode != 0:
-            self.get_logger().error(
-                f"Failed to set MOTOR_EN GPIO {MOTOR_EN_GPIO} to {value}: "
-                f"{result.stderr.strip()}"
-            )
+        msg = Bool()
+        msg.data = bool(fresh and not self.fault_latched)
+        self.status_publisher.publish(msg)
 
     def announce_fault(self, current_a: float, avg_a: float):
         message = (
             f"CRAWLER SAFETY TRIP: {avg_a:.2f} A average "
             f"({current_a:.2f} A latest) >= {TRIP_CURRENT_A:.1f} A "
-            f"-> MOTOR_EN GPIO {MOTOR_EN_GPIO}=0 -> motors disabled"
+            "-> current_ok=False (latched); motor driver disables outputs"
         )
 
         self.get_logger().error(message)
@@ -87,6 +84,12 @@ class CurrentGuardNode(Node):
         now = time.monotonic()
 
         current_a = float(msg.data)
+        if not math.isfinite(current_a):
+            self.fault_latched = True
+            self.get_logger().error("Non-finite current measurement: safety trip latched")
+            self.publish_safety_status()
+            return
+        self.last_current_time = now
         if USE_ABSOLUTE_CURRENT:
             current_a = abs(current_a)
 
@@ -98,7 +101,7 @@ class CurrentGuardNode(Node):
         avg_a = sum(value for _, value in self.samples) / len(self.samples)
 
         if self.fault_latched:
-            self.set_motor_enable(False)
+            self.publish_safety_status()
             return
 
         # Rate-limit warning spam.
@@ -114,8 +117,8 @@ class CurrentGuardNode(Node):
 
             if now - self.over_start >= TRIP_TIME_S:
                 self.fault_latched = True
-                self.set_motor_enable(False)
                 self.announce_fault(current_a, avg_a)
+                self.publish_safety_status()
         else:
             self.over_start = None
 
@@ -130,8 +133,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        # Fail-safe: disable motors when this safety node exits.
-        node.set_motor_enable(False)
+        # No GPIO ownership: stopping this process makes current_ok stale.
         node.destroy_node()
         rclpy.shutdown()
 

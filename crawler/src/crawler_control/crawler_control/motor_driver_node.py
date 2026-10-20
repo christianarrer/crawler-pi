@@ -1,15 +1,19 @@
+import math
+import time
+
 import pigpio
 import serial
 
 import rclpy
 from rclpy.duration import Duration
 from rclpy.node import Node
-from std_msgs.msg import Float32, Int32, Int64MultiArray
+from std_msgs.msg import Bool, Float32, Int32, Int64MultiArray
 
 
 COMM_RATE_SEC = 0.1
 
 MOTOR_TARGET_TIMEOUT_SEC = 1.0
+CURRENT_GUARD_TIMEOUT_SEC = 0.35
 
 CLIFF_SERIAL_DEVICE = "/dev/ttyACM0"
 CLIFF_SERIAL_BAUD = 115200
@@ -56,6 +60,8 @@ class MotorDriverNode(Node):
         self.right_target = 0.0
         self.last_left_target_time = None
         self.last_right_target_time = None
+        self.current_guard_ok = False
+        self.last_current_guard_time = None
 
         # Effective directions actually sent to the motor driver.
         self.left_dir = Int32()
@@ -139,6 +145,13 @@ class MotorDriverNode(Node):
             16,
         )
 
+        self.current_guard_subscriber = self.create_subscription(
+            Bool,
+            "/crawler/safety/current_ok",
+            self.read_current_guard_status,
+            10,
+        )
+
         self.dir_publish_timer = self.create_timer(
             COMM_RATE_SEC,
             self.publish_dir,
@@ -175,6 +188,18 @@ class MotorDriverNode(Node):
     def publish_dir(self):
         self.left_dir_publisher.publish(self.left_dir)
         self.right_dir_publisher.publish(self.right_dir)
+
+    def read_current_guard_status(self, msg):
+        self.current_guard_ok = bool(msg.data)
+        self.last_current_guard_time = time.monotonic()
+        self.apply_motor_targets()
+
+    def current_guard_is_healthy(self):
+        return (
+            self.current_guard_ok
+            and self.last_current_guard_time is not None
+            and time.monotonic() - self.last_current_guard_time <= CURRENT_GUARD_TIMEOUT_SEC
+        )
 
     def read_left_target(self, msg):
         self.left_target = self.clamp_target(msg.data)
@@ -325,6 +350,8 @@ class MotorDriverNode(Node):
     # -------------------------------------------------------------------------
 
     def clamp_target(self, target):
+        if not math.isfinite(float(target)):
+            return 0.0
         return max(-1.0, min(1.0, float(target)))
 
     def motor_targets_are_fresh(self):
@@ -431,6 +458,11 @@ class MotorDriverNode(Node):
         return 0.0, 0.0, "rotation blocked while cliff detected"
 
     def apply_motor_targets(self):
+        if not self.current_guard_is_healthy():
+            self.disable_motor_output()
+            self.log_safety_reason("current guard not OK or status timeout")
+            return
+
         if not self.motor_targets_are_fresh():
             self.disable_motor_output()
             self.log_safety_reason("motor target timeout or incomplete target pair")
@@ -446,8 +478,6 @@ class MotorDriverNode(Node):
             self.log_safety_reason(reason)
             return
 
-        self.pi.write(MOTOR_EN_GPIO, 1)
-
         self.set_motor(
             fwd_gpio=LEFT_FWD_GPIO,
             rev_gpio=LEFT_REV_GPIO,
@@ -462,6 +492,8 @@ class MotorDriverNode(Node):
         )
         self.right_dir.data = target_to_dir(safe_right)
 
+        # GPIO enable only after safe PWM outputs have been configured.
+        self.pi.write(MOTOR_EN_GPIO, 1)
         self.log_safety_reason(reason)
 
     def safety_check(self):

@@ -1,0 +1,17 @@
+[Unit]
+Description=Crawler headlight shutdown indicator
+DefaultDependencies=no
+Before=crawler-ros.service
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+ExecStop=/usr/local/bin/crawler-headlight-shutdown.sh
+RemainAfterExit=yes
+TimeoutStopSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
