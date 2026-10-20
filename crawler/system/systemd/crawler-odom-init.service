@@ -1,7 +1,7 @@
 [Unit]
 Description=Crawler odometer TMAG5273 address initialization
 After=multi-user.target
-OnSuccess=crawler-ros.service
+#OnSuccess=crawler-ros.service
 
 [Service]
 Type=oneshot
