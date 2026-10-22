@@ -1,7 +1,7 @@
 [Unit]
 Description=Crawler headlight shutdown indicator
 DefaultDependencies=no
-Before=crawler-ros.service
+# Before=crawler-ros.service  # Avoid ordering cycle with multi-user.target
 After=multi-user.target
 
 [Service]
