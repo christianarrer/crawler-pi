@@ -9,14 +9,15 @@ echo "Hostname IPs: $(hostname -I || true)"
 echo "========================================"
 
 source /opt/ros/jazzy/setup.bash
+source /home/ros/crawler-venv/bin/activate
 source /home/ros/crawler-pi/crawler/install/setup.bash
 
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-21}"
-export ROS_LOCALHOST_ONLY="${ROS_LOCALHOST_ONLY:-0}"
 
 echo "ROS_DOMAIN_ID=${ROS_DOMAIN_ID}"
-echo "ROS_LOCALHOST_ONLY=${ROS_LOCALHOST_ONLY}"
+echo "RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-unknown}"
 echo "ROS_DISTRO=${ROS_DISTRO:-unknown}"
+echo "VIRTUAL_ENV=${VIRTUAL_ENV:-none}"
 
 echo "Waiting for /dev/i2c-1..."
 for i in {1..20}; do
