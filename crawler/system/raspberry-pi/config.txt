@@ -63,3 +63,6 @@ dtoverlay=vc4-kms-v3d,cma-128
 dtoverlay=dwc2,dr_mode=host
 
 [all]
+# Crawler hardware interfaces
+dtparam=i2c_arm=on
+dtparam=spi=on
