@@ -5,7 +5,7 @@ cmdline=cmdline.txt
 initramfs initrd.img followkernel
 
 # PWM
-dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4
+#dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4
 
 # Enable the audio output, I2C and SPI interfaces on the GPIO header. As these
 # parameters related to the base device-tree they must appear *before* any
